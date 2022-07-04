@@ -50,6 +50,7 @@ fn main() {
             height_percent: 100,
             start_x_percent: 0,
             start_y_percent: 0,
+            area: window::init_area(),
         },
         settings_frame: window::Frame {
             content: window::FrameContent::Settings,
@@ -57,6 +58,7 @@ fn main() {
             height_percent: 50,
             start_x_percent: 50,
             start_y_percent: 0,
+            area: window::init_area(),
         },
         chart_frame: window::Frame {
             content: window::FrameContent::Chart,
@@ -64,6 +66,7 @@ fn main() {
             height_percent: 50,
             start_x_percent: 50,
             start_y_percent: 50,
+            area: window::init_area(),
         },
     };
 
