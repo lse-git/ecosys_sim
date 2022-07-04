@@ -8,6 +8,7 @@
 
 use crate::position;
 use crate::rgb;
+use std::io::Write;
 
 enum InteractionType {
     GoodGood,
@@ -28,15 +29,17 @@ pub struct Organism {
 }
 
 impl Organism {
-    pub fn render(&self) -> (termion::cursor::Goto, termion::color::Fg<termion::color::Rgb>, char) {
-        (
+    pub fn render(&self, mut stdout: &mut termion::raw::RawTerminal<std::io::Stdout>) {
+        write!(&mut stdout,
+            "{}{}{}",
             termion::cursor::Goto(self.pos.x, self.pos.y),
             termion::color::Fg(termion::color::Rgb(self.color.r, self.color.g, self.color.b)),
             self.repr_char,
-        )
+            ).unwrap();
     }
 }
 
+#[derive(Clone)]
 pub struct Organisms(pub Vec<Organism>);
 
 impl Organisms {
@@ -50,6 +53,12 @@ impl Organisms {
                 color: color.clone(),
                 repr_char,
             });
+        }
+    }
+
+    pub fn redistribute(self, ter_size: (u16, u16)) {
+        for mut organism in self.0 {
+            organism.pos = position::new_rnd_pos(ter_size);
         }
     }
 }

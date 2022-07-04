@@ -27,6 +27,7 @@ use termion::{
 mod position;
 mod rgb;
 mod organisms;
+mod window;
 
 // MAIN FUNCTION
 fn main() {
@@ -39,22 +40,48 @@ fn main() {
     stdout.flush().unwrap();
     let mut organisms = organisms::Organisms(vec![]);
 
+    // Create an object of Type Window
+    let mut window = window::Window {
+        width: termion::terminal_size().unwrap().0,
+        height: termion::terminal_size().unwrap().1,
+        simulation_frame: window::Frame {
+            content: window::FrameContent::Simulation,
+            width_percent: 50,
+            height_percent: 100,
+            start_x_percent: 0,
+            start_y_percent: 0,
+        },
+        settings_frame: window::Frame {
+            content: window::FrameContent::Settings,
+            width_percent: 50,
+            height_percent: 50,
+            start_x_percent: 50,
+            start_y_percent: 0,
+        },
+        chart_frame: window::Frame {
+            content: window::FrameContent::Chart,
+            width_percent: 50,
+            height_percent: 50,
+            start_x_percent: 50,
+            start_y_percent: 50,
+        },
+    };
+
     organisms.spawn_organisms::<137>("test",
         4.3,
         rgb::RGB {r: 0, g: 200, b: 50},
         '.',
-        termion::terminal_size().unwrap());
+        (window.width * window.simulation_frame.width_percent / 100,
+         window.height * window.simulation_frame.height_percent / 100));
     organisms.spawn_organisms::<14>("also_test",
         7.3,
         rgb::RGB {r: 255, g: 20, b: 20},
         '#',
-        termion::terminal_size().unwrap());
+        (window.width * window.simulation_frame.width_percent / 100,
+         window.height * window.simulation_frame.height_percent / 100));
 
     // MAIN LOOP
-    let mut ter_size = termion::terminal_size().unwrap();
     loop {
-        let old_ter_size = ter_size;
-        ter_size = termion::terminal_size().unwrap();
         let input = stdin.next();
         if let Some(Ok(key)) = input {
             match key {
@@ -63,14 +90,14 @@ fn main() {
                 _ => (),
             }
         }
-        if old_ter_size != ter_size {
-            todo!();
+        if (window.width, window.height) != termion::terminal_size().unwrap() {
+            window.new_size(termion::terminal_size().unwrap());
+            organisms.clone().redistribute((window.width, window.height));
         }
 
         // RENDERING
-        for i in &organisms.0 {
-            let buffer = i.render();
-            write!(stdout, "{}{}{}", buffer.0, buffer.1, buffer.2).unwrap();
+        for organism in &organisms.0 {
+            organism.render(&mut stdout);
         }
 
         thread::sleep(time::Duration::from_millis(2));
