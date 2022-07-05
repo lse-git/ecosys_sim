@@ -40,6 +40,27 @@ fn main() {
     stdout.flush().unwrap();
     let mut organisms = organisms::Organisms(vec![]);
 
+    //TEMP
+    organisms.0.push(organisms::Species {
+        name: String::from("Mole"),
+        dominance: 5,
+        color: rgb::RGB {
+            r: 0,
+            g: 50,
+            b: 200,
+        },
+        repr_char: '@',
+        behav_to_stronger: organisms::Behavior::Passive,
+        behav_to_equal: organisms::Behavior::Aggressive {
+            success_probability: 0.5
+        },
+        behav_to_weaker: organisms::Behavior::Aggressive {
+            success_probability: 0.9
+        },
+        organisms: vec![],
+        population_size: 0,
+    });
+
     // Create an object of Type Window
     let mut window = window::Window {
         width: termion::terminal_size().unwrap().0,
@@ -49,14 +70,6 @@ fn main() {
             width_percent: 50,
             height_percent: 100,
             start_x_percent: 0,
-            start_y_percent: 0,
-            area: window::init_area(),
-        },
-        settings_frame: window::Frame {
-            content: window::FrameContent::Settings,
-            width_percent: 50,
-            height_percent: 50,
-            start_x_percent: 50,
             start_y_percent: 0,
             area: window::init_area(),
         },
@@ -70,18 +83,9 @@ fn main() {
         },
     };
 
-    organisms.spawn_organisms::<137>("test",
-        4.3,
-        rgb::RGB {r: 0, g: 200, b: 50},
-        '.',
-        (window.width * window.simulation_frame.width_percent / 100,
-         window.height * window.simulation_frame.height_percent / 100));
-    organisms.spawn_organisms::<14>("also_test",
-        7.3,
-        rgb::RGB {r: 255, g: 20, b: 20},
-        '#',
-        (window.width * window.simulation_frame.width_percent / 100,
-         window.height * window.simulation_frame.height_percent / 100));
+    organisms.0[0].clone().spawn_organisms(15,
+        window.simulation_frame.area,
+        5.7);
 
     // MAIN LOOP
     loop {
@@ -95,12 +99,15 @@ fn main() {
         }
         if (window.width, window.height) != termion::terminal_size().unwrap() {
             window.new_size(termion::terminal_size().unwrap());
-            organisms.clone().redistribute((window.width, window.height));
+            write!(stdout, "{}", clear::All).unwrap();
+            organisms.redistribute(window.simulation_frame.area);
         }
 
         // RENDERING
-        for organism in &organisms.0 {
-            organism.render(&mut stdout);
+        for species in organisms.0.clone() {
+            for organism in species.organisms.clone() {
+                organism.render(&mut stdout);
+            }
         }
 
         thread::sleep(time::Duration::from_millis(2));

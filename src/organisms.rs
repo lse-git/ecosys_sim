@@ -8,24 +8,25 @@
 
 use crate::position;
 use crate::rgb;
+use crate::window;
 use std::io::Write;
 
-enum InteractionType {
-    GoodGood,
-    GoodBad,
-    GoodNeutral,
-    NeutralBad,
-    NeutralNeutral,
-    BadBad,
+#[derive(Clone)]
+pub enum Behavior {
+    Aggressive {
+        success_probability: f32,
+    },
+    Defensive {
+        success_probability: f32,
+    },
+    Passive,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Organism {
-    species: String,
+    species: Species,
     pos: position::POSITION,
-    speed: f32,
-    color: rgb::RGB,
-    repr_char: char,
+    strength: f32,
 }
 
 impl Organism {
@@ -33,32 +34,48 @@ impl Organism {
         write!(&mut stdout,
             "{}{}{}",
             termion::cursor::Goto(self.pos.x, self.pos.y),
-            termion::color::Fg(termion::color::Rgb(self.color.r, self.color.g, self.color.b)),
-            self.repr_char,
+            termion::color::Fg(termion::color::Rgb(self.species.color.r, self.species.color.g, self.species.color.b)),
+            self.species.repr_char,
             ).unwrap();
     }
 }
 
 #[derive(Clone)]
-pub struct Organisms(pub Vec<Organism>);
+pub struct Species {
+    name: String,
+    dominance: u16,
+    color: rgb::RGB,
+    repr_char: char,
+    behav_to_stronger: Behavior,
+    behav_to_equal: Behavior,
+    behav_to_weaker: Behavior,
+    pub organisms: Vec<Organism>,
+    population_size: u32,
+}
 
-impl Organisms {
+impl Species {
     // Function to spawn and randomly distribute a bunch of organisms of same species
-    pub fn spawn_organisms<const NUM: usize>(&mut self, species: &str, speed: f32, color: rgb::RGB, repr_char: char, ter_size: (u16, u16)) {
-        for _i in 0..(NUM as u32) {
-            self.0.push(Organism {
-                species: String::from(species),
-                pos: position::new_rnd_pos(ter_size),
-                speed,
-                color: color.clone(),
-                repr_char,
+    pub fn spawn_organisms(mut self, num: u32, area: window::AREA, strength: f32) {
+        for _i in 0..num {
+            self.organisms.push(Organism {
+                species: self,
+                pos: position::new_rnd_pos(area),
+                strength,
             });
         }
     }
+}
 
-    pub fn redistribute(self, ter_size: (u16, u16)) {
-        for mut organism in self.0 {
-            organism.pos = position::new_rnd_pos(ter_size);
+#[derive(Clone)]
+pub struct Organisms(pub Vec<Species>);
+
+impl Organisms {
+    pub fn redistribute(self, area: window::AREA) {
+        for mut species in self.0 {
+            for mut organism in species.organisms {
+                organism.pos = position::new_rnd_pos(area);
+            
+            }
         }
     }
 }

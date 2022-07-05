@@ -13,26 +13,26 @@ pub struct Window {
     pub width: u16,
     pub height: u16,
     pub simulation_frame: Frame,
-    pub settings_frame: Frame,
     pub chart_frame: Frame,
 }
 
 impl Window {
-    pub fn new_size(&mut self, size: (u16, u16)) {
+    pub fn new_size(&self, size: (u16, u16)) {
         self.width = size.0;
         self.height = size.1;
+        self.simulation_frame.resize(self);
+        self.chart_frame.resize(self);
     }
 }
 
 pub enum FrameContent {
     Simulation,
-    Settings,
     Chart,
 }
 
 pub struct AREA {
-    upper_left: position::POSITION,
-    lower_right: position::POSITION,
+    pub upper_left: position::POSITION,
+    pub lower_right: position::POSITION,
 }
 
 pub fn init_area() -> AREA {
@@ -58,7 +58,7 @@ pub struct Frame {
 }
 
 impl Frame {
-    pub fn resize(&mut self, parent: Window) {
+    pub fn resize(&mut self, parent: &Window) {
         self.area.upper_left.x = parent.width * self.start_x_percent / 100;
         self.area.upper_left.y = parent.height * self.start_y_percent / 100;
         self.area.lower_right.x = parent.width * self.width_percent / 100 + parent.width * self.start_x_percent / 100;

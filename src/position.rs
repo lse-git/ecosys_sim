@@ -6,6 +6,7 @@
 //|_|   \___/  \/
 
 
+use crate::window;
 use rand::{
     thread_rng,
     Rng,
@@ -17,10 +18,10 @@ pub struct POSITION {
     pub y: u16,
 }
 
-pub fn new_rnd_pos(size: (u16, u16)) -> POSITION {
+pub fn new_rnd_pos(size: window::AREA) -> POSITION {
     let mut rng = thread_rng();
     POSITION {
-        x: rng.gen_range(0..size.0),
-        y: rng.gen_range(0..size.1),
+        x: rng.gen_range(size.upper_left.x..size.lower_right.x),
+        y: rng.gen_range(size.upper_left.y..size.lower_right.y),
     }
 }
