@@ -44,10 +44,11 @@ fn main() {
     organisms.0.push(organisms::Species {
         name: String::from("Mole"),
         dominance: 5,
+        id: organisms.0.len(),
         color: rgb::RGB {
-            r: 0,
-            g: 50,
-            b: 200,
+            r: 255,
+            g: 75,
+            b: 50,
         },
         repr_char: '@',
         behav_to_stronger: organisms::Behavior::Passive,
@@ -63,8 +64,16 @@ fn main() {
 
     // Create an object of Type Window
     let mut window = window::Window {
-        width: termion::terminal_size().unwrap().0,
-        height: termion::terminal_size().unwrap().1,
+        area: window::AREA {
+            upper_left: position::POSITION {
+                x: 1,
+                y: 1,
+            },
+            lower_right: position::POSITION {
+                x: termion::terminal_size().unwrap().0,
+                y: termion::terminal_size().unwrap().1,
+            }
+        },
         simulation_frame: window::Frame {
             content: window::FrameContent::Simulation,
             width_percent: 50,
@@ -72,6 +81,7 @@ fn main() {
             start_x_percent: 0,
             start_y_percent: 0,
             area: window::init_area(),
+            usable_area: window::init_area(),
         },
         chart_frame: window::Frame {
             content: window::FrameContent::Chart,
@@ -80,12 +90,20 @@ fn main() {
             start_x_percent: 50,
             start_y_percent: 50,
             area: window::init_area(),
+            usable_area: window::init_area(),
         },
     };
 
-    organisms.0[0].clone().spawn_organisms(15,
+    organisms.0[0].spawn_organisms(25,
         window.simulation_frame.area,
+        2.4,
         5.7);
+
+    organisms.0[0].color = rgb::RGB {
+        r: 0,
+        g: 255,
+        b: 0,
+    };
 
     // MAIN LOOP
     loop {
@@ -97,20 +115,33 @@ fn main() {
                 _ => (),
             }
         }
-        if (window.width, window.height) != termion::terminal_size().unwrap() {
-            window.new_size(termion::terminal_size().unwrap());
+
+        // RESIZED
+        if window.area.to_width_height() != termion::terminal_size().unwrap() {
+        //if true {
+            window.update_size(window::AREA {
+                upper_left: position::POSITION {
+                    x: 0,
+                    y: 0,
+                },
+                lower_right: position::POSITION {
+                    x: termion::terminal_size().unwrap().0,
+                    y: termion::terminal_size().unwrap().1,
+                },
+            });
+            window.simulation_frame.resize(window);
             write!(stdout, "{}", clear::All).unwrap();
-            organisms.redistribute(window.simulation_frame.area);
+            organisms.redistribute(window.simulation_frame.usable_area);
         }
 
         // RENDERING
-        for species in organisms.0.clone() {
-            for organism in species.organisms.clone() {
-                organism.render(&mut stdout);
+        for species in &organisms.0 {
+            for organism in &species.organisms {
+                organism.render(&mut stdout, organisms.clone());
             }
         }
 
-        thread::sleep(time::Duration::from_millis(2));
+        thread::sleep(time::Duration::from_millis(10));
     }
 
     // After exiting, reset terminal
@@ -118,5 +149,8 @@ fn main() {
         cursor::Show, clear::All,
         cursor::Goto(1, 1),
         termion::color::Fg(termion::color::Reset)).unwrap();
-    //write!(stdout, "{:?}", test).unwrap();
+    //write!(stdout, "{:?}", organisms).unwrap();
+    write!(stdout, "{:?}", window.area).unwrap();
+    write!(stdout, "{:?}", window.simulation_frame.usable_area).unwrap();
+    //write!(stdout, "{:?}{:?}", window.area.to_width_height(), termion::terminal_size().unwrap());
 }

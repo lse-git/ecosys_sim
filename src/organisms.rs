@@ -11,7 +11,7 @@ use crate::rgb;
 use crate::window;
 use std::io::Write;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Behavior {
     Aggressive {
         success_probability: f32,
@@ -22,59 +22,69 @@ pub enum Behavior {
     Passive,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Organism {
-    species: Species,
+    species_id: usize,
     pos: position::POSITION,
+    speed: f32,
     strength: f32,
 }
 
 impl Organism {
-    pub fn render(&self, mut stdout: &mut termion::raw::RawTerminal<std::io::Stdout>) {
+    pub fn species_from_id(&self, organisms_vec: &Organisms) -> Species {
+        organisms_vec.0[self.species_id].clone()
+    }
+
+    pub fn render(&self, mut stdout: &mut termion::raw::RawTerminal<std::io::Stdout>, organisms_vec: Organisms) {
         write!(&mut stdout,
             "{}{}{}",
             termion::cursor::Goto(self.pos.x, self.pos.y),
-            termion::color::Fg(termion::color::Rgb(self.species.color.r, self.species.color.g, self.species.color.b)),
-            self.species.repr_char,
+            termion::color::Fg(termion::color::Rgb(
+                    self.species_from_id(&organisms_vec).color.r,
+                    self.species_from_id(&organisms_vec).color.g,
+                    self.species_from_id(&organisms_vec).color.b)),
+            self.species_from_id(&organisms_vec).repr_char,
             ).unwrap();
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Species {
-    name: String,
-    dominance: u16,
-    color: rgb::RGB,
-    repr_char: char,
-    behav_to_stronger: Behavior,
-    behav_to_equal: Behavior,
-    behav_to_weaker: Behavior,
+    pub name: String,
+    pub id: usize,
+    pub dominance: u16,
+    pub color: rgb::RGB,
+    pub repr_char: char,
+    pub behav_to_stronger: Behavior,
+    pub behav_to_equal: Behavior,
+    pub behav_to_weaker: Behavior,
     pub organisms: Vec<Organism>,
-    population_size: u32,
+    pub population_size: u32,
 }
 
 impl Species {
     // Function to spawn and randomly distribute a bunch of organisms of same species
-    pub fn spawn_organisms(mut self, num: u32, area: window::AREA, strength: f32) {
+    pub fn spawn_organisms(&mut self, num: u32, area: window::AREA, speed: f32, strength: f32) {
         for _i in 0..num {
             self.organisms.push(Organism {
-                species: self,
-                pos: position::new_rnd_pos(area),
+                species_id: self.id,
+                pos: position::new_rnd_pos(area.clone()),
+                speed,
                 strength,
             });
         }
+        self.population_size += num
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Organisms(pub Vec<Species>);
 
 impl Organisms {
-    pub fn redistribute(self, area: window::AREA) {
-        for mut species in self.0 {
-            for mut organism in species.organisms {
+    pub fn redistribute(&mut self, area: window::AREA) {
+        for species in &mut self.0 {
+            for mut organism in &mut species.organisms {
                 organism.pos = position::new_rnd_pos(area);
-            
             }
         }
     }
